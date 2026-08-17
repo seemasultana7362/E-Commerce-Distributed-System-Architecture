@@ -85,10 +85,10 @@ Instead of implementing a traditional monolithic CRUD application, the platform 
              │                      │     Inventory     Payment   Notification
              │                      │       Service      Service     Service
              │                      │          │           │           │
-             └──────────────────────┴──────────┼───────────┼───────────┘
+             └──────────────────────┴──────────┼───────────-───────────┘
                                                │
                               ┌────────────────┴────────────────┐
-                              │                                │
+                              │                                 │
                          Redis Cache                     PostgreSQL
                                                             │
                                                    ┌────────┴────────┐
@@ -256,35 +256,79 @@ The system follows a **microservices architecture**.
 Each service owns a bounded business capability and can be independently deployed and scaled.
 
 ```text
-                         CLIENT
-                           │
-                           ▼
-                    ┌──────────────┐
-                    │     NGINX    │
-                    │ API Gateway  │
-                    └──────┬───────┘
-                           │
-          ┌────────────────┼────────────────┐
-          │                │                │
-          ▼                ▼                ▼
-      Auth API        Product API        Order API
-          │                │                │
-          │                │                ▼
-          │                │              Kafka
-          │                │                │
-          │                │     ┌──────────┼──────────┐
-          │                │     ▼          ▼          ▼
-          │                │ Inventory    Payment   Notification
-          │                │     │          │          │
-          └────────────────┴─────┼──────────┼──────────┘
-                                 │
-                       ┌─────────┴─────────┐
-                       ▼                   ▼
-                    Redis              PostgreSQL
-                                         │
-                                ┌────────┴────────┐
-                                ▼                 ▼
-                              Primary         Replicas
+                         CUSTOMER
+                            │
+                            ▼
+                     React Frontend
+                            │
+                            ▼
+                    NGINX API Gateway
+                            │
+                            ▼
+                     Order Service
+                            │
+                     Create PENDING
+                            │
+                            ▼
+                    PostgreSQL + Outbox
+                            │
+                            ▼
+                          Kafka
+                            │
+                    order.created
+                            │
+                            ▼
+                  Inventory Service
+                            │
+                     Reserve Stock
+                            │
+                    ┌───────┴────────┐
+                    │                │
+                    ▼                ▼
+              INVENTORY OK      INVENTORY FAIL
+                    │                │
+                    │                ▼
+                    │            CANCEL ORDER
+                    │
+                    ▼
+            inventory.reserved
+                    │
+                    ▼
+                  Kafka
+                    │
+                    ▼
+             Payment Service
+                    │
+             Process Payment
+                    │
+              ┌─────┴─────┐
+              │           │
+              ▼           ▼
+          PAYMENT OK   PAYMENT FAIL
+              │           │
+              │           ▼
+              │     Release Inventory
+              │           │
+              │           ▼
+              │       CANCEL ORDER
+              │
+              ▼
+       payment.completed
+              │
+              ▼
+            Kafka
+              │
+              ▼
+        Order Service
+              │
+              ▼
+          CONFIRMED
+              │
+              ▼
+      Notification Service
+              │
+              ▼
+       Order Confirmation
 ```
 
 ---

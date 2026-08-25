@@ -15,12 +15,12 @@ Get the distributed e-commerce system running in 5 minutes!
 ```bash
 # Clone the repository
 git clone https://github.com/seemasultana7362/E-Commerce-Distributed-System-Architecture.git
-cd ecommerce-system
+cd E-Commerce-Distributed-System-Architecture
 
-# Start all services
+# Start  all services 
 make dev
 ```
-
+   
 That's it! The system will start:
 - ✅ PostgreSQL Auth Database
 - ✅ PostgreSQL Product Database
